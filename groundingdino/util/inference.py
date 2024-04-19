@@ -30,7 +30,7 @@ def load_model(model_config_path: str, model_checkpoint_path: str, device: str =
     args = SLConfig.fromfile(model_config_path)
     args.device = device
     model = build_model(args)
-    checkpoint = torch.load(model_checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(model_checkpoint_path, map_location=device)
     model.load_state_dict(clean_state_dict(checkpoint["model"]), strict=False)
     model.eval()
     return model
@@ -67,8 +67,8 @@ def predict(
     with torch.no_grad():
         outputs = model(image[None], captions=[caption])
 
-    prediction_logits = outputs["pred_logits"].cpu().sigmoid()[0]  # prediction_logits.shape = (nq, 256)
-    prediction_boxes = outputs["pred_boxes"].cpu()[0]  # prediction_boxes.shape = (nq, 4)
+    prediction_logits = outputs["pred_logits"].sigmoid()[0]  # prediction_logits.shape = (nq, 256)
+    prediction_boxes = outputs["pred_boxes"][0]  # prediction_boxes.shape = (nq, 4)
 
     mask = prediction_logits.max(dim=1)[0] > box_threshold
     logits = prediction_logits[mask]  # logits.shape = (n, 256)
